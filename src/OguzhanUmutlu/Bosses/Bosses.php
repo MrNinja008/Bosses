@@ -56,10 +56,8 @@ use pocketmine\entity\Entity;
 use pocketmine\math\Vector3;
 use pocketmine\plugin\PluginBase;
 
-class Bosses extends PluginBase
-{
-    public function onEnable()
-    {
+class Bosses extends PluginBase {
+    public function onEnable() {
         foreach([
                     new AgentBoss(null, Entity::createBaseNBT(new Vector3())),
                     new BatBoss(null, Entity::createBaseNBT(new Vector3())),
