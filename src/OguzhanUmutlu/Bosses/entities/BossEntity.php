@@ -12,6 +12,7 @@ use pocketmine\block\Solid;
 use pocketmine\entity\Entity;
 use pocketmine\entity\Living;
 use pocketmine\entity\projectile\Arrow;
+use pocketmine\event\entity\EntityDamageByEntityEvent;
 use pocketmine\event\entity\EntityDamageEvent;
 use pocketmine\item\Item;
 use pocketmine\level\Level;
@@ -44,6 +45,7 @@ abstract class BossEntity extends Living {
     /*** @var BossEntity[] */
     protected $minions = [];
     private $isNew = false;
+    private $damages = [];
     public function __construct(Level $level, CompoundTag $nbt, ?BossAttributes $attributes = null) {
         $this->attributes = $attributes ?? new BossAttributes();
         parent::__construct($level, $nbt);
@@ -74,6 +76,8 @@ abstract class BossEntity extends Living {
             $this->flagForDespawn();
         if($this->isClosed())
             return false;
+        if($this->attributes->isMinion && !$this->getOwningEntity() instanceof BossEntity)
+            $this->flagForDespawn();
         if(!$this->itemGiven && $this->attributes->canShoot)
             $this->refreshItem();
         if(($this->targetEntity instanceof Player && ($this->targetEntity->isClosed() || $this->targetEntity->isCreative() || $this->targetEntity->isSpectator())) || !$this->isAggressive) {
@@ -127,6 +131,7 @@ abstract class BossEntity extends Living {
                     $attributes = clone $this->attributes;
                     $attributes->isMinion = true;
                     $minion->attributes = $attributes;
+                    $minion->setOwningEntity($this);
                     $this->minions[] = $minion;
                 }
             } else $this->minionTicks++;
@@ -171,6 +176,8 @@ abstract class BossEntity extends Living {
         if($source->getCause() == EntityDamageEvent::CAUSE_FALL && !$source->isCancelled() && !$this->attributes->fallDamage)
             $source->setCancelled();
         parent::attack($source);
+        if(!$source->isCancelled() && $source instanceof EntityDamageByEntityEvent && ($p = $source->getDamager()) && $p instanceof Player)
+            $this->damages[$p->getName()]+=$source->getFinalDamage();
     }
     public function saveNBT(): void {
         $this->saveAttributes();
@@ -288,20 +295,22 @@ abstract class BossEntity extends Living {
     public function saveAttributes(): void {
         $this->namedtag->setTag(($this->attributes ?? new BossAttributes())->toCompoundTag());
     }
+    public $mostKillers = [];
     public function kill(): void {
         $this->setHealth(0);
         $this->scheduleUpdate();
         $this->startDeathAnimation();
         $drops = $this->getDrops();
+        $this->mostKillers = $this->damages;
+        rsort($this->mostKillers);
         if($this->attributes->isMinion) {
             $ev = new MinionDeathEvent($this, $drops);
-            $ev->call();
-            $drops = $ev->getDrops();
+            $drops = $this->attributes->minionDrops;
         } else {
             $ev = new BossDeathEvent($this, $drops);
-            $ev->call();
-            $drops = $ev->getDrops();
+            $drops = $this->attributes->drops;
         }
+        $ev->call();
         foreach($drops as $drop)
             $this->level->dropItem($this, $drop);
     }

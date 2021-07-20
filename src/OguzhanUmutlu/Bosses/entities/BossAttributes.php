@@ -29,6 +29,8 @@ class BossAttributes {
     public $isAlwaysAggressive = true;
     /*** @var Item[] */
     public $drops = [];
+    /*** @var Item[] */
+    public $minionDrops = [];
     public function toArray(): array {
         return [
             "isMinion" => $this->isMinion,
@@ -48,7 +50,8 @@ class BossAttributes {
             "canShoot" => $this->canShoot,
             "minionSpawnTickAmount" => $this->minionSpawnTickAmount,
             "isAlwaysAggressive" => $this->isAlwaysAggressive,
-            "drops" => array_map(function($drop){return $drop->jsonSerialize();},$this->drops)
+            "drops" => array_map(function($drop){return $drop->jsonSerialize();},$this->drops),
+            "minionDrops" => array_map(function($drop){return $drop->jsonSerialize();},$this->minionDrops)
         ];
     }
     public function toCompoundTag(): CompoundTag {
@@ -70,7 +73,8 @@ class BossAttributes {
             new ByteTag("bossCanShoot", $this->canShoot),
             new IntTag("bossMinionSpawnTickAmount", $this->minionSpawnTickAmount),
             new ByteTag("bossIsAlwaysAggressive", $this->isAlwaysAggressive),
-            new CompoundTag(new ListTag("bossBossDrops", array_map(function($drop){return $drop->nbtSerialize();},$this->drops)))
+            new CompoundTag(new ListTag("bossBossDrops", array_map(function($drop){return $drop->nbtSerialize();},$this->drops))),
+            new CompoundTag(new ListTag("minionDrops", array_map(function($drop){return $drop->nbtSerialize();},$this->minionDrops)))
         ]);
     }
     public static function fromCompoundTag(CompoundTag $tag): BossAttributes {
@@ -93,6 +97,7 @@ class BossAttributes {
         $attributes->minionSpawnTickAmount = $tag->getInt("bossMinionSpawnTickAmount", 20*60);
         $attributes->isAlwaysAggressive = $tag->getByte("bossIsAlwaysAggressive", true);
         $attributes->drops = array_filter(array_map(function($drop){if(!$drop instanceof CompoundTag) return null; return Item::nbtDeserialize($drop);},($tag->getListTag("bossDrops") ?? new ListTag())->getValue()));
+        $attributes->minionDrops = array_filter(array_map(function($drop){if(!$drop instanceof CompoundTag) return null; return Item::nbtDeserialize($drop);},($tag->getListTag("bossMinionDrops") ?? new ListTag())->getValue()));
         return $attributes;
     }
     public static function fromArray(array $array): self {
@@ -134,6 +139,7 @@ class BossAttributes {
             && $attributes->canShoot == $this->canShoot
             && $attributes->minionSpawnTickAmount == $this->minionSpawnTickAmount
             && $attributes->isAlwaysAggressive == $this->isAlwaysAggressive
+            && array_map(function($item){return $item->jsonSerialize();},$attributes->drops) === array_map(function($item){return $item->jsonSerialize();},$this->drops)
             && array_map(function($item){return $item->jsonSerialize();},$attributes->drops) === array_map(function($item){return $item->jsonSerialize();},$this->drops);
     }
 }
