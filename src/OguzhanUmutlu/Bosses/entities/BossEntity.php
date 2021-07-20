@@ -5,8 +5,10 @@ namespace OguzhanUmutlu\Bosses\entities;
 use pocketmine\block\Block;
 use pocketmine\block\Liquid;
 use pocketmine\block\Solid;
+use pocketmine\entity\Entity;
 use pocketmine\entity\Living;
 use pocketmine\event\entity\EntityDamageEvent;
+use pocketmine\item\Item;
 use pocketmine\level\Level;
 use pocketmine\math\Vector3;
 use pocketmine\math\VoxelRayTrace;
@@ -16,20 +18,26 @@ use pocketmine\nbt\tag\DoubleTag;
 use pocketmine\nbt\tag\FloatTag;
 use pocketmine\nbt\tag\IntTag;
 use pocketmine\nbt\tag\ListTag;
+use pocketmine\network\mcpe\protocol\LevelSoundEventPacket;
+use pocketmine\network\mcpe\protocol\MobEquipmentPacket;
+use pocketmine\network\mcpe\protocol\types\inventory\ItemStackWrapper;
 use pocketmine\Player;
+use pocketmine\Server;
 use pocketmine\utils\Binary;
 
 abstract class BossEntity extends Living {
     public $lifeTicks = 0;
-    public $isAggressive;
+    public $shootTicks = 0;
+    private $minionTicks = 0;
+    private $targetTicks = 0;
+    public $itemGiven = false;
+    public $isAggressive = false;
     /*** @var BossAttributes|null */
     public $attributes = null;
     /*** @var Player */
     public $targetEntity = null;
     /*** @var BossEntity[] */
     protected $minions = [];
-    private $minionTicks = 0;
-    private $targetTicks = 0;
     private $isNew = false;
     public function __construct(Level $level, CompoundTag $nbt, ?BossAttributes $attributes = null) {
         $this->attributes = $attributes ?? new BossAttributes();
@@ -44,9 +52,8 @@ abstract class BossEntity extends Living {
             $this->setScale($this->namedtag->getFloat("Scale"));
         parent::initEntity();
     }
-
     public function onUpdate(int $currentTick): bool {
-        if(!$this->attributes)
+        if(!$this->attributes instanceof BossAttributes)
             $this->attributes = new BossAttributes();
         if($this->attributes->isAlwaysAggressive)
             $this->isAggressive = true;
@@ -54,8 +61,33 @@ abstract class BossEntity extends Living {
             $this->flagForDespawn();
         if($this->isClosed())
             return false;
-        if($this->targetEntity instanceof Player && $this->targetEntity->isClosed())
+        if(!$this->itemGiven && $this->attributes->canShoot)
+            $this->refreshItem();
+        if(($this->targetEntity instanceof Player && ($this->targetEntity->isClosed() || $this->targetEntity->isCreative() || $this->targetEntity->isSpectator())) || !$this->isAggressive) {
             $this->targetEntity = null;
+            $this->shootTicks = 0;
+        }
+        if($this->isAggressive && $this->targetEntity instanceof Player) {
+            if($this->attributes->canShoot)
+                $this->targetEntity->attack(new EntityDamageEvent($this, EntityDamageEvent::CAUSE_ENTITY_ATTACK, $this->attributes->damageAmount));
+            else {
+                $this->shootTicks++;
+                if($this->shootTicks >= 35) {
+                    $this->shootTicks = 0;
+                    $this->level->broadcastLevelSoundEvent($this, LevelSoundEventPacket::SOUND_BOW);
+                    $arrow = Entity::createEntity("Arrow", $this->level, Entity::createBaseNBT(
+                        $this->add(0, $this->getEyeHeight()),
+                        $this->getDirectionVector(),
+                        ($this->yaw > 180 ? 360 : 0) - $this->yaw,
+                        -$this->pitch
+                    ), $this, !$this->isOnGround());
+                    if($this->attributes->damageFire)
+                        $arrow->setOnFire(60);
+                    $arrow->spawnToAll();
+                }
+            }
+            $this->targetEntity->setMotion($this->targetEntity->getMotion()->add($this->attributes->hitMotionX, $this->attributes->hitMotionY, $this->attributes->hitMotionZ));
+        }
         $this->lifeTicks++;
         $this->targetTicks++;
         if(empty($this->getMinions()) && $this->attributes->canSpawnMinions && !$this->attributes->isMinion) {
@@ -102,7 +134,7 @@ abstract class BossEntity extends Living {
     }
     public function recalculateTargetEntity(): void {
         foreach($this->getViewers() as $player)
-            if($player->distance($player) <= $this->attributes->visionReach && !$this->getTargetBlock($this->attributes->visionReach) instanceof Solid)
+            if(!$player->isClosed() && !$player->isCreative() && !$player->isSpectator() && $player->distance($player) <= $this->attributes->visionReach && !$this->getTargetBlock($this->attributes->visionReach) instanceof Solid)
                 if(!$this->targetEntity instanceof Player || $this->targetEntity->isClosed() || $this->targetEntity->distance($this->asVector3()) > $player->distance($this->asVector3())) {
                     if($this->attributes->isAlwaysAggressive) {
                         $this->targetEntity = $player;
@@ -158,11 +190,9 @@ abstract class BossEntity extends Living {
                     new ByteTag("ShowParticles", $effect->isVisible() ? 1 : 0)
                 ]);
             }
-
             $this->namedtag->setTag(new ListTag("ActiveEffects", $effects));
-        }else{
+        } else
             $this->namedtag->removeTag("ActiveEffects");
-        }
     }
     public function setHealth(float $amount): void {
         parent::setHealth($amount);
@@ -217,5 +247,17 @@ abstract class BossEntity extends Living {
         $x = -$xz * sin(deg2rad($yaw));
         $z = $xz * cos(deg2rad($yaw));
         return $this->temporalVector->setComponents($x, $y, $z)->normalize();
+    }
+    public function refreshItem(): void {
+        $this->itemGiven = true;
+        $pk = new MobEquipmentPacket();
+        $pk->item = ItemStackWrapper::legacy(Item::get(Item::BOW));
+        $pk->hotbarSlot = $pk->inventorySlot = 0;
+        $pk->entityRuntimeId = $this->id;
+        Server::getInstance()->broadcastPacket($this->getViewers(), $pk);
+    }
+    public function spawnTo(Player $player): void {
+        parent::spawnTo($player);
+        $this->refreshItem();
     }
 }
