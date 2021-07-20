@@ -116,12 +116,10 @@ class HumanBoss extends BossEntity {
         $player->dataPacket($pk);
         $this->sendData($player, [self::DATA_NAMETAG => [self::DATA_TYPE_STRING, $this->getNameTag()]]);
         $this->armorInventory->sendContents($player);
-        if(!($this instanceof Player)){
-            $pk = new PlayerListPacket();
-            $pk->type = PlayerListPacket::TYPE_REMOVE;
-            $pk->entries = [PlayerListEntry::createRemovalEntry($this->uuid)];
-            $player->dataPacket($pk);
-        }
+        $pk = new PlayerListPacket();
+        $pk->type = PlayerListPacket::TYPE_REMOVE;
+        $pk->entries = [PlayerListEntry::createRemovalEntry($this->uuid)];
+        $player->dataPacket($pk);
     }
     protected function initEntity() : void{
         parent::initEntity();

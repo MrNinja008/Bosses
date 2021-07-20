@@ -2,11 +2,16 @@
 
 namespace OguzhanUmutlu\Bosses\entities;
 
+use OguzhanUmutlu\Bosses\events\BossDeathEvent;
+use OguzhanUmutlu\Bosses\events\BossShootEvent;
+use OguzhanUmutlu\Bosses\events\MinionDeathEvent;
+use OguzhanUmutlu\Bosses\events\MinionShootEvent;
 use pocketmine\block\Block;
 use pocketmine\block\Liquid;
 use pocketmine\block\Solid;
 use pocketmine\entity\Entity;
 use pocketmine\entity\Living;
+use pocketmine\entity\projectile\Arrow;
 use pocketmine\event\entity\EntityDamageEvent;
 use pocketmine\item\Item;
 use pocketmine\level\Level;
@@ -50,6 +55,7 @@ abstract class BossEntity extends Living {
             $this->setMaxHealth($this->namedtag->getFloat("MaxHealth"));
         if($this->namedtag->hasTag("Scale", FloatTag::class))
             $this->setScale($this->namedtag->getFloat("Scale"));
+        $this->attributes = BossAttributes::fromCompoundTag($this->namedtag);
         parent::initEntity();
     }
     public function onCollideWithPlayer(Player $player): void {
@@ -81,16 +87,25 @@ abstract class BossEntity extends Living {
                 $this->shootTicks++;
                 if($this->shootTicks >= 35) {
                     $this->shootTicks = 0;
-                    $this->level->broadcastLevelSoundEvent($this, LevelSoundEventPacket::SOUND_BOW);
                     $arrow = Entity::createEntity("Arrow", $this->level, Entity::createBaseNBT(
                         $this->add(0, $this->getEyeHeight()),
                         $this->getDirectionVector(),
                         ($this->yaw > 180 ? 360 : 0) - $this->yaw,
                         -$this->pitch
                     ), $this, !$this->isOnGround());
-                    if($this->attributes->damageFire)
-                        $arrow->setOnFire(10);
-                    $arrow->spawnToAll();
+                    if($arrow instanceof Arrow) {
+                        if($this->attributes->damageFire)
+                            $arrow->setOnFire(10);
+                        if($this->attributes->isMinion)
+                            $ev = new MinionShootEvent($this, $arrow);
+                        else $ev = new BossShootEvent($this, $arrow);
+                        $ev->call();
+                        if(!$ev->isCancelled()) {
+                            $arrow = $ev->getProjectile();
+                            $this->level->broadcastLevelSoundEvent($this, LevelSoundEventPacket::SOUND_BOW);
+                            $arrow->spawnToAll();
+                        }
+                    }
                 }
             }
             $this->targetEntity->setMotion($this->targetEntity->getMotion()->add($this->attributes->hitMotionX, $this->attributes->hitMotionY, $this->attributes->hitMotionZ));
@@ -272,5 +287,22 @@ abstract class BossEntity extends Living {
     }
     public function saveAttributes(): void {
         $this->namedtag->setTag(($this->attributes ?? new BossAttributes())->toCompoundTag());
+    }
+    public function kill(): void {
+        $this->setHealth(0);
+        $this->scheduleUpdate();
+        $this->startDeathAnimation();
+        $drops = $this->getDrops();
+        if($this->attributes->isMinion) {
+            $ev = new MinionDeathEvent($this, $drops);
+            $ev->call();
+            $drops = $ev->getDrops();
+        } else {
+            $ev = new BossDeathEvent($this, $drops);
+            $ev->call();
+            $drops = $ev->getDrops();
+        }
+        foreach($drops as $drop)
+            $this->level->dropItem($this, $drop);
     }
 }
