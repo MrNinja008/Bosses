@@ -10,6 +10,8 @@ use pocketmine\nbt\tag\IntTag;
 class BossAttributes {
     public $isMinion = false;
     public $speed = 1.0;
+    public $canClimb = true;
+    public $canSwim = true;
     public $hitChance = 70;
     public $fallDamage = true;
     public $canSpawnMinions = true;
@@ -27,6 +29,8 @@ class BossAttributes {
         return [
             "isMinion" => $this->isMinion,
             "speed" => $this->speed,
+            "canClimb" => $this->canClimb,
+            "canSwim" => $this->canSwim,
             "hitChance" => $this->hitChance,
             "fallDamage" => $this->fallDamage,
             "canSpawnMinions" => $this->canSpawnMinions,
@@ -46,6 +50,8 @@ class BossAttributes {
         return new CompoundTag("BossAttributes", [
             new ByteTag("isMinion", $this->isMinion),
             new FloatTag("speed", $this->speed),
+            new ByteTag("canClimb", $this->canClimb),
+            new ByteTag("canSwim", $this->canSwim),
             new FloatTag("hitChance", $this->hitChance),
             new ByteTag("fallDamage", $this->fallDamage),
             new ByteTag("canSpawnMinions", $this->canSpawnMinions),
@@ -65,6 +71,8 @@ class BossAttributes {
         $attributes = new self();
         $attributes->isMinion = $array["isMinion"];
         $attributes->speed = $array["speed"];
+        $attributes->canClimb = $array["canClimb"];
+        $attributes->canSwim = $array["canSwim"];
         $attributes->hitChance = $array["hitChance"];
         $attributes->fallDamage = $array["fallDamage"];
         $attributes->canSpawnMinions = $array["canSpawnMinions"];

@@ -131,7 +131,7 @@ abstract class BossEntity extends Living {
         $dz*=$this->attributes->speed;
         parent::move($dx, $dy, $dz);
         $target = $this->getTargetBlock(2);
-        if(!is_null($target) && $this->boundingBox && $target->collidesWithBB($this->boundingBox) || !empty(array_filter($this->level->getCollisionBlocks($this->getBoundingBox()), function($block){return $block instanceof Liquid;})))
+        if(!is_null($target) && $this->boundingBox && (($target->collidesWithBB($this->boundingBox) && $this->attributes->canClimb) || (!empty(array_filter($this->level->getCollisionBlocks($this->getBoundingBox()), function($block){return $block instanceof Liquid;})) && $this->attributes->canSwim)))
             $this->setMotion(new Vector3(0, 0.2));
     }
     public function recalculateTargetEntity(): void {
