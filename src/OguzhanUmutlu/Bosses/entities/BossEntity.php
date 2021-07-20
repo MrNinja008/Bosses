@@ -295,6 +295,7 @@ abstract class BossEntity extends Living {
     public function saveAttributes(): void {
         $this->namedtag->setTag(($this->attributes ?? new BossAttributes())->toCompoundTag());
     }
+    public $onDie = [];
     public $mostKillers = [];
     public function kill(): void {
         $this->setHealth(0);
@@ -313,5 +314,7 @@ abstract class BossEntity extends Living {
         $ev->call();
         foreach($drops as $drop)
             $this->level->dropItem($this, $drop);
+        foreach($this->onDie as $die)
+            $die();
     }
 }

@@ -2,6 +2,9 @@
 
 namespace OguzhanUmutlu\Bosses;
 
+use dktapps\pmforms\MenuForm;
+use dktapps\pmforms\MenuOption;
+use OguzhanUmutlu\Bosses\entities\BossAttributes;
 use OguzhanUmutlu\Bosses\entities\BossEntity;
 use OguzhanUmutlu\Bosses\entities\types\AgentBoss;
 use OguzhanUmutlu\Bosses\entities\types\BatBoss;
@@ -52,12 +55,25 @@ use OguzhanUmutlu\Bosses\entities\types\ZombieBoss;
 use OguzhanUmutlu\Bosses\entities\types\ZombieHorseBoss;
 use OguzhanUmutlu\Bosses\entities\types\ZombiePigmanBoss;
 use OguzhanUmutlu\Bosses\entities\types\ZombieVillager;
+use OguzhanUmutlu\Bosses\tasks\BossTask;
+use pocketmine\command\Command;
+use pocketmine\command\CommandSender;
 use pocketmine\entity\Entity;
+use pocketmine\level\Level;
+use pocketmine\level\Position;
 use pocketmine\math\Vector3;
+use pocketmine\Player;
 use pocketmine\plugin\PluginBase;
+use pocketmine\utils\Config;
 
 class Bosses extends PluginBase {
+    /*** @var Config */
+    public static $config;
+    /*** @var Bosses */
+    public static $instance;
     public function onEnable() {
+        self::$config = $this->getConfig();
+        self::$instance = $this;
         foreach([
                     new AgentBoss(null, Entity::createBaseNBT(new Vector3())),
                     new BatBoss(null, Entity::createBaseNBT(new Vector3())),
@@ -111,5 +127,40 @@ class Bosses extends PluginBase {
                 ] as $entity)
             if($entity instanceof BossEntity)
                 Entity::registerEntity(get_class($entity), true, [$entity->getName()]);
+            foreach(self::$config->getNested("bosses", []) as $boss) {
+                $boss["isMinion"] = false;
+                $attributes = BossAttributes::fromArray($boss);
+                if(!$this->getServer()->isLevelLoaded($boss["position"]["level"]))
+                    $this->getServer()->loadLevel($boss["position"]["level"]);
+                if($this->getServer()->getLevelByName($boss["position"]["level"]) instanceof Level)
+                    new BossTask($attributes, $boss["scale"], $boss["health"], $boss["maxHealth"], $boss["name"], new Position($boss["position"]["x"], $boss["position"]["y"], $boss["position"]["z"], $this->getServer()->getLevelByName($boss["position"]["level"])), $boss["ticks"]);
+            }
+    }
+
+    public function onCommand(CommandSender $sender, Command $command, string $label, array $args): bool {
+        if($command->getName() != "boss" || !$sender->hasPermission($command->getPermission())) return true;
+        if(!$sender instanceof Player) {
+            $sender->sendMessage("§c> Use this command in-game.");
+            return true;
+        }
+        $sender->sendForm(new MenuForm(
+            "Boss Menu",
+            "Select an action:",
+            [
+                new MenuOption("Create new auto-boss"),
+                new MenuOption("Create boss")
+            ],
+            function(Player $player, int $res): void {
+                switch($res) {
+                    case 0:
+                        // TODO: copy of case 1 but with ticks
+                        break;
+                    case 1:
+                        // TODO: all settings in custom form
+                        break;
+                }
+            }
+        ));
+        return true;
     }
 }
