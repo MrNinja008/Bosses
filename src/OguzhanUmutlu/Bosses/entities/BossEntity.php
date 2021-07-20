@@ -52,6 +52,11 @@ abstract class BossEntity extends Living {
             $this->setScale($this->namedtag->getFloat("Scale"));
         parent::initEntity();
     }
+    public function onCollideWithPlayer(Player $player): void {
+        parent::onCollideWithPlayer($player);
+        $player->setMotion($this->getDirectionVectorCopy($this->lookAtCopyYaw($this, $player), $this->lookAtCopyPitch($this, $player))->multiply($this->getScale()));
+    }
+
     public function onUpdate(int $currentTick): bool {
         if(!$this->attributes instanceof BossAttributes) {
             $this->attributes = new BossAttributes();
@@ -231,17 +236,19 @@ abstract class BossEntity extends Living {
         }
         return $blocks;
     }
-    public function lookAtCopyYaw(Vector3 $target): float {
-        $xDist = $target->x - $this->x;
-        $zDist = $target->z - $this->z;
+    public function lookAtCopyYaw(Vector3 $target, ?Vector3 $from = null): float {
+        $from = $from ?? $this;
+        $xDist = $target->x - $from->x;
+        $zDist = $target->z - $from->z;
         $yaw = atan2($zDist, $xDist) / M_PI * 180 - 90;
         if($yaw < 0)
             $yaw += 360.0;
         return $yaw;
     }
-    public function lookAtCopyPitch(Vector3 $target): float {
-        $horizontal = sqrt(($target->x - $this->x) ** 2 + ($target->z - $this->z) ** 2);
-        $vertical = $target->y - $this->y;
+    public function lookAtCopyPitch(Vector3 $target, ?Vector3 $from = null): float {
+        $from = $from ?? $this;
+        $horizontal = sqrt(($target->x - $from->x) ** 2 + ($target->z - $from->z) ** 2);
+        $vertical = $target->y - $from->y;
         return -atan2($vertical, $horizontal) / M_PI * 180;
     }
     public function getDirectionVectorCopy(float $yaw, float $pitch): Vector3 {
