@@ -78,15 +78,8 @@ abstract class BossEntity extends Living {
             } else $this->minionTicks++;
         }
         if($this->targetTicks >= 20) {
-            if($this->attributes->isAlwaysAggressive) {
-                $this->targetTicks = 0;
-                $this->recalculateTargetEntity();
-            } else if(!$this->isAggressive) {
-                $this->targetTicks = 0;
-                foreach($this->getViewers() as $player) {
-
-                }
-            }
+            $this->targetTicks = 0;
+            $this->recalculateTargetEntity();
         }
         if($this->isAggressive && $this->targetEntity instanceof Player && $this->targetEntity->isAlive() && !$this->targetEntity->isClosed() && $this->targetEntity->isOnline()) {
             $this->lookAt($this->targetEntity);
