@@ -1,0 +1,6 @@
+---
+name: Bosses
+version: 1.0.0
+api: 3.0.0
+main: OguzhanUmutlu\Bosses\Bosses
+...
