@@ -82,7 +82,7 @@ abstract class BossEntity extends Living {
                         -$this->pitch
                     ), $this, !$this->isOnGround());
                     if($this->attributes->damageFire)
-                        $arrow->setOnFire(60);
+                        $arrow->setOnFire(10);
                     $arrow->spawnToAll();
                 }
             }
