@@ -53,8 +53,10 @@ abstract class BossEntity extends Living {
         parent::initEntity();
     }
     public function onUpdate(int $currentTick): bool {
-        if(!$this->attributes instanceof BossAttributes)
+        if(!$this->attributes instanceof BossAttributes) {
             $this->attributes = new BossAttributes();
+            $this->saveAttributes();
+        }
         if($this->attributes->isAlwaysAggressive)
             $this->isAggressive = true;
         if(!$this->isNew && $this->attributes->isMinion)
@@ -151,6 +153,7 @@ abstract class BossEntity extends Living {
         parent::attack($source);
     }
     public function saveNBT(): void {
+        $this->saveAttributes();
         if(!($this instanceof Player)){
             $this->namedtag->setString("id", $this->getSaveId(), true);
             if($this->getNameTag() !== ""){
@@ -259,5 +262,8 @@ abstract class BossEntity extends Living {
     public function spawnTo(Player $player): void {
         parent::spawnTo($player);
         $this->refreshItem();
+    }
+    public function saveAttributes(): void {
+        $this->namedtag->setTag(($this->attributes ?? new BossAttributes())->toCompoundTag());
     }
 }

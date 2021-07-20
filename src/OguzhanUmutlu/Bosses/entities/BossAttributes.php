@@ -2,6 +2,11 @@
 
 namespace OguzhanUmutlu\Bosses\entities;
 
+use pocketmine\nbt\tag\ByteTag;
+use pocketmine\nbt\tag\CompoundTag;
+use pocketmine\nbt\tag\FloatTag;
+use pocketmine\nbt\tag\IntTag;
+
 class BossAttributes {
     public $isMinion = false;
     public $speed = 1.0;
@@ -36,6 +41,25 @@ class BossAttributes {
             "minionSpawnTickAmount" => $this->minionSpawnTickAmount,
             "isAlwaysAggressive" => $this->isAlwaysAggressive
         ];
+    }
+    public function toCompoundTag(): CompoundTag {
+        return new CompoundTag("BossAttributes", [
+            new ByteTag("isMinion", $this->isMinion),
+            new FloatTag("speed", $this->speed),
+            new FloatTag("hitChance", $this->hitChance),
+            new ByteTag("fallDamage", $this->fallDamage),
+            new ByteTag("canSpawnMinions", $this->canSpawnMinions),
+            new ByteTag("canSpawnMinions", $this->canSpawnMinions),
+            new FloatTag("hitReach", $this->hitReach),
+            new FloatTag("damageAmount", $this->damageAmount),
+            new ByteTag("damageFire", $this->damageFire),
+            new FloatTag("hitMotionX", $this->hitMotionX),
+            new FloatTag("hitMotionY", $this->hitMotionY),
+            new FloatTag("hitMotionZ", $this->hitMotionZ),
+            new ByteTag("canShoot", $this->canShoot),
+            new IntTag("minionSpawnTickAmount", $this->minionSpawnTickAmount),
+            new ByteTag("isAlwaysAggressive", $this->isAlwaysAggressive)
+        ]);
     }
     public static function fromArray(array $array): self {
         $attributes = new self();
