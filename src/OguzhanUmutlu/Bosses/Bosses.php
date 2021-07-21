@@ -2,6 +2,13 @@
 
 namespace OguzhanUmutlu\Bosses;
 
+use dktapps\pmforms\CustomForm;
+use dktapps\pmforms\CustomFormResponse;
+use dktapps\pmforms\element\Dropdown;
+use dktapps\pmforms\element\Input;
+use dktapps\pmforms\element\Label;
+use dktapps\pmforms\element\StepSlider;
+use dktapps\pmforms\element\Toggle;
 use dktapps\pmforms\MenuForm;
 use dktapps\pmforms\MenuOption;
 use OguzhanUmutlu\Bosses\entities\BossAttributes;
@@ -71,6 +78,11 @@ class Bosses extends PluginBase {
     public static $config;
     /*** @var Bosses */
     public static $instance;
+    /*** @var string */
+    public static $bossSaves = [];
+    /*
+     * bossType => bossClass
+     * */
     public function onEnable() {
         self::$config = $this->getConfig();
         self::$instance = $this;
@@ -125,8 +137,10 @@ class Bosses extends PluginBase {
                     new ZombiePigmanBoss(null, Entity::createBaseNBT(new Vector3())),
                     new ZombieVillager(null, Entity::createBaseNBT(new Vector3()))
                 ] as $entity)
-            if($entity instanceof BossEntity)
+            if($entity instanceof BossEntity) {
                 Entity::registerEntity(get_class($entity), true, [$entity->getName()]);
+                self::$bossSaves[$entity->getName()] = get_class($entity);
+            }
             foreach(self::$config->getNested("bosses", []) as $boss) {
                 $boss["isMinion"] = false;
                 $attributes = BossAttributes::fromArray($boss);
@@ -136,7 +150,7 @@ class Bosses extends PluginBase {
                     new BossTask($attributes, $boss["scale"], $boss["health"], $boss["maxHealth"], $boss["name"], new Position($boss["position"]["x"], $boss["position"]["y"], $boss["position"]["z"], $this->getServer()->getLevelByName($boss["position"]["level"])), $boss["ticks"]);
             }
     }
-
+    private $tasks = [];
     public function onCommand(CommandSender $sender, Command $command, string $label, array $args): bool {
         if($command->getName() != "boss" || !$sender->hasPermission($command->getPermission())) return true;
         if(!$sender instanceof Player) {
@@ -147,20 +161,78 @@ class Bosses extends PluginBase {
             "Boss Menu",
             "Select an action:",
             [
-                new MenuOption("Create new auto-boss"),
-                new MenuOption("Create boss")
+                new MenuOption("Create new Boss"),
+                new MenuOption("Manage existing Boss"),
+                new MenuOption("Remove existing Boss"),
+                new MenuOption("List of existing Boss")
             ],
             function(Player $player, int $res): void {
                 switch($res) {
                     case 0:
-                        // TODO: copy of case 1 but with ticks
+                        $player->sendForm(new CustomForm(
+                            "Boss Menu > Create new boss",
+                            [
+                                new Dropdown("type", "Boss type", array_keys(self::$bossSaves)),
+                                new Label("ssss", "\n\nGeneral Attributes:"),
+                                new Input("nametag", "Nametag", "My boss", "My boss"),
+                                new Toggle("nametagvisible", "Name tag visible"),
+                                new Toggle("nametagalwaysvisible", "Name tag always visible"),
+                                new Input("health", "HP (2 HP = 1 Heart)", "20", "20"),
+                                new Input("maxhealth", "Maximum HP (2 HP = 1 Heart)", "20", "20"),
+                                new Input("health", "HP (2 HP = 1 Heart)", "20", "20"),
+                                new Input("seconds", "Auto spawn countdown(seconds) [Optional]", "60"),
+                                new Label("sssss", "\n\nBoss attributes:"),
+                                new Input("speed", "Speed", "1", "1"),
+                                new Toggle("canclimb", "Can climb"),
+                                new Toggle("canswim", "Can swim"),
+                                new StepSlider("hitchance", "Hit chance", range(0, 100)),
+                                new Toggle("falldamage", "Fall damage", true),
+                                new Toggle("canspawnminions", "Can spawn minions"),
+                                new Input("visionreach", "How far can boss see players from?", "10", "10"),
+                                new Input("hitreach", "Hit reach", "1.2", "1.2"),
+                                new Input("damageamount", "Damage amount HP (2 HP = 1 Heart)", "2", "2"),
+                                new Toggle("damagefire", "Can boss set on fire players when boss hits them?"),
+                                new Input("hitmotionx", "Hit extra knockback X", "0", "0"),
+                                new Input("hitmotiony", "Hit extra knockback Y", "0", "0"),
+                                new Input("hitmotionz", "Hit extra knockback Z", "0", "0"),
+                                new Input("hitmotion", "Hit extra knockback General", "0", "0"),
+                                new Toggle("canshoot", "Can boss shoot", false),
+                                new Input("minionspawnseconds", "Minion spawn countdown(seconds) [If minions are disabled you don't need to complete this]", "60", "60"),
+                                new Toggle("isalwaysaggressive", "Is always aggressive", true),
+                                new Toggle("eyeaggressive", "Is it being aggressive when player looks his eyes", true),
+                                new Label("drops", "Boss and minion's drops is configurable in config.yml"),
+                                new Toggle("spawnnow", "Spawn now?")
+                            ],
+                            function(Player $player, CustomFormResponse $response): void {
+                                $attributes = BossAttributes::fromArray([
+                                    "speed" => (float)$response->getString("speed"),
+                                    "canClimb" => $response->getBool("canclimb"),
+                                    "canSwim" => $response->getBool("canswim"),
+                                    "hitChance" => (float)$response->getString("hitchance"),
+                                    "fallDamage" => $response->getBool("falldamage"),
+                                    "canSpawnMinions" => $response->getBool("canspawnminions")
+                                ]);
+                                // TODO: end this :p
+                            }
+                        ));
                         break;
                     case 1:
-                        // TODO: all settings in custom form
+                        // TODO: manage
+                        break;
+                    case 2:
+                        // TODO: remove
+                        break;
+                    case 3:
+                        // TODO: list
                         break;
                 }
             }
         ));
         return true;
+    }
+    private $unique = 0;
+    public function getUniqueId(): int {
+        $this->unique++;
+        return $this->unique;
     }
 }

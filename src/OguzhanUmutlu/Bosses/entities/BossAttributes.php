@@ -110,7 +110,7 @@ class BossAttributes {
     }
     public static function fromArray(array $array): self {
         $attributes = new self();
-        $attributes->isMinion = $array["isMinion"];
+        $attributes->isMinion = $array["isMinion"] ?? false;
         $attributes->speed = $array["speed"];
         $attributes->canClimb = $array["canClimb"];
         $attributes->canSwim = $array["canSwim"];
