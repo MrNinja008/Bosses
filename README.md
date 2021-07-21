@@ -173,6 +173,7 @@ $damage = $event->getDamage();
 
 # TODO
 - more attributes
+- add Fly AI
 
 # Reporting bugs
 **You may open an issue on the Bosses GitHub repository for report bugs**
