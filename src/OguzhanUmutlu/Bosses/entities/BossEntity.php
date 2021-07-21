@@ -85,7 +85,7 @@ abstract class BossEntity extends Living {
             $this->shootTicks = 0;
         }
         if($this->isAggressive && $this->targetEntity instanceof Player) {
-            if($this->attributes->canShoot)
+            if(!$this->attributes->canShoot)
                 $this->targetEntity->attack(new EntityDamageEvent($this, EntityDamageEvent::CAUSE_ENTITY_ATTACK, $this->attributes->damageAmount));
             else {
                 $this->shootTicks++;
@@ -113,6 +113,7 @@ abstract class BossEntity extends Living {
                 }
             }
             $this->targetEntity->setMotion($this->targetEntity->getMotion()->add($this->attributes->hitMotionX, $this->attributes->hitMotionY, $this->attributes->hitMotionZ));
+            $this->targetEntity->setMotion($this->targetEntity->getMotion()->add($this->getDirectionVectorCopy($this->lookAtCopyYaw($this->targetEntity), $this->lookAtCopyPitch($this->targetEntity))->multiply($this->attributes->hitMotion)));
         }
         $this->lifeTicks++;
         $this->targetTicks++;

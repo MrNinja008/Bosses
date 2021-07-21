@@ -24,6 +24,7 @@ class BossAttributes {
     public $hitMotionX = 0;
     public $hitMotionY = 0;
     public $hitMotionZ = 0;
+    public $hitMotion = 0;
     public $canShoot = true;
     public $minionSpawnTickAmount = 20*60;
     public $isAlwaysAggressive = true;
@@ -47,6 +48,7 @@ class BossAttributes {
             "hitMotionX" => $this->hitMotionX,
             "hitMotionY" => $this->hitMotionY,
             "hitMotionZ" => $this->hitMotionZ,
+            "hitMotion" => $this->hitMotion,
             "canShoot" => $this->canShoot,
             "minionSpawnTickAmount" => $this->minionSpawnTickAmount,
             "isAlwaysAggressive" => $this->isAlwaysAggressive,
@@ -70,6 +72,7 @@ class BossAttributes {
             new FloatTag("bossHitMotionX", $this->hitMotionX),
             new FloatTag("bossHitMotionY", $this->hitMotionY),
             new FloatTag("bossHitMotionZ", $this->hitMotionZ),
+            new FloatTag("bossHitMotion", $this->hitMotion),
             new ByteTag("bossCanShoot", $this->canShoot),
             new IntTag("bossMinionSpawnTickAmount", $this->minionSpawnTickAmount),
             new ByteTag("bossIsAlwaysAggressive", $this->isAlwaysAggressive),
@@ -93,6 +96,7 @@ class BossAttributes {
         $attributes->hitMotionX = $tag->getFloat("bossHitMotionX", 0);
         $attributes->hitMotionY = $tag->getFloat("bossHitMotionY", 0);
         $attributes->hitMotionZ = $tag->getFloat("bossHitMotionZ", 0);
+        $attributes->hitMotion = $tag->getFloat("bossHitMotion", 0);
         $attributes->canShoot = $tag->getByte("bossCanShoot", true);
         $attributes->minionSpawnTickAmount = $tag->getInt("bossMinionSpawnTickAmount", 20*60);
         $attributes->isAlwaysAggressive = $tag->getByte("bossIsAlwaysAggressive", true);
@@ -116,6 +120,7 @@ class BossAttributes {
         $attributes->hitMotionX = $array["hitMotionX"];
         $attributes->hitMotionY = $array["hitMotionY"];
         $attributes->hitMotionZ = $array["hitMotionZ"];
+        $attributes->hitMotion = $array["hitMotion"];
         $attributes->canShoot = $array["canShoot"];
         $attributes->minionSpawnTickAmount = $array["minionSpawnTickAmount"];
         $attributes->isAlwaysAggressive = $array["isAlwaysAggressive"];
@@ -136,6 +141,8 @@ class BossAttributes {
             && $attributes->damageFire == $this->damageFire
             && $attributes->hitMotionX == $this->hitMotionX
             && $attributes->hitMotionY == $this->hitMotionY
+            && $attributes->hitMotionZ == $this->hitMotionZ
+            && $attributes->hitMotion == $this->hitMotion
             && $attributes->canShoot == $this->canShoot
             && $attributes->minionSpawnTickAmount == $this->minionSpawnTickAmount
             && $attributes->isAlwaysAggressive == $this->isAlwaysAggressive
