@@ -170,7 +170,7 @@ $damage = $event->getDamage();
 
 
 # TODO
-- idk
+- more attributes
 
 # Reporting bugs
 **You may open an issue on the Bosses GitHub repository for report bugs**
