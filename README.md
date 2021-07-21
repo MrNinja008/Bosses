@@ -14,6 +14,8 @@ This plugin adds entities that they have so much things to configure!
 
 Type `/boss` and select `Create new Boss`
 
+Select `Spawn now?`
+
 Select boss's attributes and press `Create` at the bottom of the menu
 
 # How to make a boss auto spawn?
