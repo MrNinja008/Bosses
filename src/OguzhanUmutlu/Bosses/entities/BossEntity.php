@@ -2,10 +2,10 @@
 
 namespace OguzhanUmutlu\Bosses\entities;
 
-use OguzhanUmutlu\Bosses\events\BossDeathEvent;
-use OguzhanUmutlu\Bosses\events\BossShootEvent;
-use OguzhanUmutlu\Bosses\events\MinionDeathEvent;
-use OguzhanUmutlu\Bosses\events\MinionShootEvent;
+use OguzhanUmutlu\Bosses\events\boss\BossDeathEvent;
+use OguzhanUmutlu\Bosses\events\boss\BossShootEvent;
+use OguzhanUmutlu\Bosses\events\minion\MinionDeathEvent;
+use OguzhanUmutlu\Bosses\events\minion\MinionShootEvent;
 use pocketmine\block\Block;
 use pocketmine\block\Liquid;
 use pocketmine\block\Solid;
@@ -172,12 +172,18 @@ abstract class BossEntity extends Living {
                     }
                 }
     }
+    public $onDamage = [];
     public function attack(EntityDamageEvent $source): void {
         if($source->getCause() == EntityDamageEvent::CAUSE_FALL && !$source->isCancelled() && !$this->attributes->fallDamage)
             $source->setCancelled();
         parent::attack($source);
-        if(!$source->isCancelled() && $source instanceof EntityDamageByEntityEvent && ($p = $source->getDamager()) && $p instanceof Player)
-            $this->damages[$p->getName()]+=$source->getFinalDamage();
+        if(!$source->isCancelled() && $source instanceof EntityDamageByEntityEvent && ($p = $source->getDamager()) && $p instanceof Player) {
+            $this->damages[$p->getName()] += $source->getFinalDamage();
+            $this->mostDamages = $this->damages;
+            rsort($this->mostDamages);
+            foreach($this->onDamage as $item)
+                $item();
+        }
     }
     public function saveNBT(): void {
         $this->saveAttributes();
@@ -295,15 +301,25 @@ abstract class BossEntity extends Living {
     public function saveAttributes(): void {
         $this->namedtag->setTag(($this->attributes ?? new BossAttributes())->toCompoundTag());
     }
+    public function getOnlineDamagePlayers(): array {
+        $sort = array_filter(
+            array_keys($this->mostDamages),
+            function($playerName) {
+                return Server::getInstance()->getPlayerExact($playerName);
+            }
+        );
+        rsort($sort);
+        return $sort;
+    }
     public $onDie = [];
-    public $mostKillers = [];
+    public $mostDamages = [];
     public function kill(): void {
         $this->setHealth(0);
         $this->scheduleUpdate();
         $this->startDeathAnimation();
         $drops = $this->getDrops();
-        $this->mostKillers = $this->damages;
-        rsort($this->mostKillers);
+        $this->mostDamages = $this->damages;
+        rsort($this->mostDamages);
         if($this->attributes->isMinion) {
             $ev = new MinionDeathEvent($this, $drops);
             $drops = $this->attributes->minionDrops;

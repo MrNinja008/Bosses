@@ -1,21 +1,15 @@
 <?php
 
-namespace OguzhanUmutlu\Bosses\events;
+namespace OguzhanUmutlu\Bosses\events\minion;
 
 use OguzhanUmutlu\Bosses\entities\BossEntity;
-use pocketmine\event\Event;
+use OguzhanUmutlu\Bosses\events\MinionEvent;
 
-class MinionDeathEvent extends Event {
-    private $minion;
+class MinionDeathEvent extends MinionEvent {
     private $drops;
     public function __construct(BossEntity $minion, array $drops) {
-        $this->minion = $minion;
         $this->drops = $drops;
-    }
-
-    /*** @return BossEntity */
-    public function getMinion(): BossEntity {
-        return $this->minion;
+        parent::__construct($minion);
     }
 
     /*** @return array */

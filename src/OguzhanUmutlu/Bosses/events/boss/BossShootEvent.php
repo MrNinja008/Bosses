@@ -1,23 +1,17 @@
 <?php
 
-namespace OguzhanUmutlu\Bosses\events;
+namespace OguzhanUmutlu\Bosses\events\boss;
 
 use OguzhanUmutlu\Bosses\entities\BossEntity;
+use OguzhanUmutlu\Bosses\events\BossEvent;
 use pocketmine\entity\projectile\Projectile;
 use pocketmine\event\Cancellable;
-use pocketmine\event\Event;
 
-class MinionShootEvent extends Event implements Cancellable {
-    private $minion;
+class BossShootEvent extends BossEvent implements Cancellable {
     private $projectile;
-    public function __construct(BossEntity $minion, Projectile $projectile) {
-        $this->minion = $minion;
+    public function __construct(BossEntity $boss, Projectile $projectile) {
         $this->projectile = $projectile;
-    }
-
-    /*** @return BossEntity */
-    public function getMinion(): BossEntity {
-        return $this->minion;
+        parent::__construct($boss);
     }
 
     /*** @return Projectile */
