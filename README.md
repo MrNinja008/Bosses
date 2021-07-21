@@ -95,45 +95,6 @@ $boss->onDie[] = function() {
 ```
 
 ***
-
-How to add death listener for a single boss?
-
-```php
-use pocketmine\Server;
-use OguzhanUmutlu\Bosses\entities\BossEntity;
-```
-
-```php
-/** @var BossEntity $boss */
-$boss->onDie[] = function() {
-    $onlineDamagers = $boss->getOnlineDamagePlayers();
-    $firstPlayerName = array_keys($onlineDamagers)[0];
-    Server::getInstance()->broadcastMessage(
-        "Boss's most damager is $firstPlayerName!"
-    );
-};
-```
-
-***
-
-How to add death listener for a single boss?
-
-```php
-use pocketmine\Server;
-use OguzhanUmutlu\Bosses\entities\BossEntity;
-```
-
-```php
-/** @var BossEntity $boss */
-$boss->onDie[] = function() {
-    $onlineDamagers = $boss->getOnlineDamagePlayers();
-    $firstPlayerName = array_keys($onlineDamagers)[0];
-    Server::getInstance()->broadcastMessage(
-        "Boss's most damager is $firstPlayerName!"
-    );
-};
-```
-
 Events:
 
 ```php
