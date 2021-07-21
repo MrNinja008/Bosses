@@ -2,8 +2,10 @@
 
 namespace OguzhanUmutlu\Bosses\entities;
 
+use OguzhanUmutlu\Bosses\events\boss\BossDamageEvent;
 use OguzhanUmutlu\Bosses\events\boss\BossDeathEvent;
 use OguzhanUmutlu\Bosses\events\boss\BossShootEvent;
+use OguzhanUmutlu\Bosses\events\minion\MinionDamageEvent;
 use OguzhanUmutlu\Bosses\events\minion\MinionDeathEvent;
 use OguzhanUmutlu\Bosses\events\minion\MinionShootEvent;
 use pocketmine\block\Block;
@@ -166,8 +168,8 @@ abstract class BossEntity extends Living {
                 if(!$this->targetEntity instanceof Player || $this->targetEntity->isClosed() || $this->targetEntity->distance($this->asVector3()) > $player->distance($this->asVector3())) {
                     if($this->attributes->isAlwaysAggressive) {
                         $this->targetEntity = $player;
-                    } else {
-                        $similarity = abs((($player->yaw+$player->pitch)/2)-(($this->lookAtCopyYaw($player)*$this->lookAtCopyPitch($player))/2));
+                    } else if($this->attributes->eyeAggressive) {
+                        $similarity = abs((($player->yaw+$player->pitch)/2)-(($this->lookAtCopyYaw($player->add(0, -$this->eyeHeight))*$this->lookAtCopyPitch($player->add(0, -$this->eyeHeight)))/2));
                         if($similarity <= 7 && !$player->isClosed())
                             $this->targetEntity = $player;
                     }
@@ -177,6 +179,12 @@ abstract class BossEntity extends Living {
     public function attack(EntityDamageEvent $source): void {
         if($source->getCause() == EntityDamageEvent::CAUSE_FALL && !$source->isCancelled() && !$this->attributes->fallDamage)
             $source->setCancelled();
+        if($source instanceof EntityDamageByEntityEvent) {
+            if($this->attributes->isMinion)
+                $ev = new MinionDamageEvent($this, $source);
+            else $ev = new BossDamageEvent($this, $source);
+            $ev->call();
+        }
         parent::attack($source);
         if(!$source->isCancelled() && $source instanceof EntityDamageByEntityEvent && ($p = $source->getDamager()) && $p instanceof Player) {
             $this->damages[$p->getName()] += $source->getFinalDamage();
@@ -184,6 +192,7 @@ abstract class BossEntity extends Living {
             rsort($this->mostDamages);
             foreach($this->onDamage as $item)
                 $item();
+            $this->targetEntity = $p;
         }
     }
     public function saveNBT(): void {

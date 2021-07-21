@@ -28,6 +28,7 @@ class BossAttributes {
     public $canShoot = true;
     public $minionSpawnTickAmount = 20*60;
     public $isAlwaysAggressive = true;
+    public $eyeAggressive = true;
     /*** @var Item[] */
     public $drops = [];
     /*** @var Item[] */
@@ -52,6 +53,7 @@ class BossAttributes {
             "canShoot" => $this->canShoot,
             "minionSpawnTickAmount" => $this->minionSpawnTickAmount,
             "isAlwaysAggressive" => $this->isAlwaysAggressive,
+            "eyeAggressive" => $this->eyeAggressive,
             "drops" => array_map(function($drop){return $drop->jsonSerialize();},$this->drops),
             "minionDrops" => array_map(function($drop){return $drop->jsonSerialize();},$this->minionDrops)
         ];
@@ -76,8 +78,9 @@ class BossAttributes {
             new ByteTag("bossCanShoot", $this->canShoot),
             new IntTag("bossMinionSpawnTickAmount", $this->minionSpawnTickAmount),
             new ByteTag("bossIsAlwaysAggressive", $this->isAlwaysAggressive),
+            new ByteTag("eyeAggressive", $this->eyeAggressive),
             new CompoundTag(new ListTag("bossBossDrops", array_map(function($drop){return $drop->nbtSerialize();},$this->drops))),
-            new CompoundTag(new ListTag("minionDrops", array_map(function($drop){return $drop->nbtSerialize();},$this->minionDrops)))
+            new CompoundTag(new ListTag("bossMinionDrops", array_map(function($drop){return $drop->nbtSerialize();},$this->minionDrops)))
         ]);
     }
     public static function fromCompoundTag(CompoundTag $tag): BossAttributes {
@@ -100,6 +103,7 @@ class BossAttributes {
         $attributes->canShoot = $tag->getByte("bossCanShoot", true);
         $attributes->minionSpawnTickAmount = $tag->getInt("bossMinionSpawnTickAmount", 20*60);
         $attributes->isAlwaysAggressive = $tag->getByte("bossIsAlwaysAggressive", true);
+        $attributes->eyeAggressive = $tag->getByte("bossEyeAggressive", true);
         $attributes->drops = array_filter(array_map(function($drop){if(!$drop instanceof CompoundTag) return null; return Item::nbtDeserialize($drop);},($tag->getListTag("bossDrops") ?? new ListTag())->getValue()));
         $attributes->minionDrops = array_filter(array_map(function($drop){if(!$drop instanceof CompoundTag) return null; return Item::nbtDeserialize($drop);},($tag->getListTag("bossMinionDrops") ?? new ListTag())->getValue()));
         return $attributes;
@@ -124,7 +128,9 @@ class BossAttributes {
         $attributes->canShoot = $array["canShoot"];
         $attributes->minionSpawnTickAmount = $array["minionSpawnTickAmount"];
         $attributes->isAlwaysAggressive = $array["isAlwaysAggressive"];
+        $attributes->eyeAggressive = $array["eyeAggressive"];
         $attributes->drops = array_map(function($drop){return Item::jsonDeserialize($drop);},$array["drops"]);
+        $attributes->minionDrops = array_map(function($drop){return Item::jsonDeserialize($drop);},$array["minionDrops"]);
         return $attributes;
     }
     public function equals(BossAttributes $attributes): bool {
@@ -146,7 +152,8 @@ class BossAttributes {
             && $attributes->canShoot == $this->canShoot
             && $attributes->minionSpawnTickAmount == $this->minionSpawnTickAmount
             && $attributes->isAlwaysAggressive == $this->isAlwaysAggressive
+            && $attributes->eyeAggressive == $this->eyeAggressive
             && array_map(function($item){return $item->jsonSerialize();},$attributes->drops) === array_map(function($item){return $item->jsonSerialize();},$this->drops)
-            && array_map(function($item){return $item->jsonSerialize();},$attributes->drops) === array_map(function($item){return $item->jsonSerialize();},$this->drops);
+            && array_map(function($item){return $item->jsonSerialize();},$attributes->minionDrops) === array_map(function($item){return $item->jsonSerialize();},$this->minionDrops);
     }
 }
